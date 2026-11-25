@@ -1,0 +1,18 @@
+{
+  "mapping_verified": true,
+  "steering_channel": 1,
+  "throttle_channel": 2,
+  "permit_channel": 5,
+  "mode_channel": 6,
+  "raw_low": 174,
+  "raw_center": 992,
+  "raw_high": 1811,
+  "throttle_idle": "center",
+  "throttle_reverse": false,
+  "steering_reverse": false,
+  "deadband": 0.08,
+  "max_linear": 0.03,
+  "max_angular": 0.06,
+  "max_reverse_linear": 0.009,
+  "note": "Measured BOXER input mapping only. Real-input PREVIEW preparation; RF failsafe and hardware not validated."
+}

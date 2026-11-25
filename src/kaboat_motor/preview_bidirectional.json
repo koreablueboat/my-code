@@ -1,0 +1,29 @@
+{
+  "mode": "bidirectional",
+  "note": "PREVIEW ONLY. Blue Robotics Basic ESC-style example, not confirmed user hardware.",
+  "esc_spec_verified": false,
+  "oe_default_disabled_verified": false,
+  "independent_stop_verified": false,
+  "signal_loss_stop_verified": false,
+  "reverse_limit": 0.04,
+  "neutral_dwell_seconds": 0.40,
+  "frequency_hz": 50,
+  "i2c_address": 64,
+  "reference_clock_hz": 25000000,
+  "oe_gpio_bcm": 17,
+  "neutral_init_seconds": 3,
+  "left": {
+    "channel": 0,
+    "sign": 1,
+    "neutral_us": 1500,
+    "forward_us": 1900,
+    "reverse_us": 1100
+  },
+  "right": {
+    "channel": 1,
+    "sign": 1,
+    "neutral_us": 1500,
+    "forward_us": 1900,
+    "reverse_us": 1100
+  }
+}

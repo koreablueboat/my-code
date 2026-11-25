@@ -1,0 +1,4 @@
+# Not required for preview. Resolve/install in the Pi's compatible Python environment.
+adafruit-blinka
+adafruit-circuitpython-pca9685
+gpiozero
