@@ -45,7 +45,7 @@ def validate_config(c):
 class Supervisor:
     def __init__(self, config, expected_backend='preview'):
         self.c = validate_config(config)
-        if expected_backend not in ('preview', 'pca9685'):
+        if expected_backend not in ('preview', 'pca9685', 'bench_neutral', 'bench_variable', 'left_t200_water', 'manual_dual'):
             raise ValueError('unknown motor backend')
         self.backend = expected_backend
         self.phase, self.reason = 'KILLED', 'startup_rearm_required'
@@ -144,6 +144,8 @@ class Supervisor:
     def auto_health(self, now):
         if self.mode != 'AUTO':
             return None
+        if self.backend in ('bench_variable', 'left_t200_water', 'manual_dual'):
+            return 'variable_bench_manual_only'
         if not self.auto_graph_ok:
             return 'auto_publisher_required'
         if self.auto_at is None or now-self.auto_at > AUTO_TIMEOUT:

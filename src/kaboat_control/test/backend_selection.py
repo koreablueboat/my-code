@@ -79,7 +79,7 @@ class Inputs:
         assert state['phase'] == 'RUNNING'
 
 
-@pytest.mark.parametrize('controller,reported', [(None, 'preview'), ('pca9685', 'pca9685')],
+@pytest.mark.parametrize('controller,reported', [(None, 'preview'), ('pca9685', 'pca9685'), ('bench_neutral', 'bench_neutral')],
                          indirect=['controller'])
 def test_matching_backend_and_sa_kill(controller, reported):
     inputs = Inputs(controller, reported)
@@ -93,7 +93,7 @@ def test_matching_backend_and_sa_kill(controller, reported):
     inputs.arm_sequence()
 
 
-@pytest.mark.parametrize('controller,reported', [(None, 'pca9685'), ('pca9685', 'preview')],
+@pytest.mark.parametrize('controller,reported', [(None, 'pca9685'), ('pca9685', 'preview'), ('bench_neutral', 'preview'), (None, 'bench_neutral')],
                          indirect=['controller'])
 def test_backend_mismatch(controller, reported):
     inputs = Inputs(controller, reported)

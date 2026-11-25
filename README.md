@@ -1,23 +1,45 @@
-# RC 보트 개발 워크스페이스
+# RC 보트 수동 제어
 
-ROS 2 Humble에서 `boat_rc`가 수신기의 채널과 링크 품질을 발행하고, `kaboat_control`이 RC 모드와 재무장 상태를 확인해 좌우 추진기를 제어한다. 통합 실행은 양방향 PREVIEW를 사용한다.
+ROS 2 Humble에서 양쪽 T200을 RC로 조종하는 프로그램은 `kaboat_manual`의 `manual` 실행기다. CRSF 수신기와 MANUAL 감독기, 차동 믹서, PCA9685 모터 노드를 함께 관리한다. 전진·후진·제자리 회전·복합 조향·중립·SA KILL을 지원한다.
 
-## 자율주행 에이전트 연결
+**실물 운항은 미승인이다.** 배포한 `manual_dual` 설정은 보정 후보이며 기본 `check`와 `start`는 승인 검사에서 종료된다. 독립 추진 전원 차단, ESC 신호 상실 정지, 양쪽 실물 매핑 등 현장 승인 조건과 모터 기동 후 최대 20초 제한이 적용된다. [수동 제어 사용 설명서](src/kaboat_manual/README.md)
 
-에이전트 → `/boat/auto/cmd_vel` → `kaboat_control` → `/boat/cmd_vel` → `kaboat_motor`
+## 설치된 프로그램 사용
 
-에이전트 하나가 AUTO 후보 명령을 `geometry_msgs/msg/Twist`로 발행한다. 전진은 `linear.x` 0~0.03, 회전은 `angular.z` ±0.06이며 나머지 성분은 0이다. AUTO 재무장 동안 중립 명령을 유지하고 운행 중에는 수신 간격을 0.30초 이내로 유지한다. RC와 링크 품질도 계속 유효해야 한다. 최종 명령 토픽은 제어기가 단독 발행한다. [제어기 운용 방법](src/kaboat_control/README.md)
-
-## 빌드와 검증
-
-워크스페이스 루트에서 실행한다.
+각 터미널에서 환경을 먼저 불러온다.
 
 ```bash
 source /opt/ros/humble/setup.bash
-colcon build
-source install/setup.bash
-colcon test --return-code-on-test-failure
-colcon test-result --verbose
+source ~/kaboat_ws/install/setup.bash
+ros2 run kaboat_manual manual check
 ```
 
-등록된 시험은 합성 UART와 모의 PCA로 실행한다. 현장 측정에는 [벤치 검증표](docs/records/bench-stop.md)를 사용하고, 작업 이력은 [개발 기록](docs/records/README.md)에 남긴다.
+현장 승인 프로파일이 발행되면 해당 경로로 검사하고 현장 터미널에서 시작한다. 아래 경로는 예시다.
+
+```bash
+ros2 run kaboat_manual manual check --profile ~/approved/manual_dual.json
+ros2 run kaboat_manual manual start --profile ~/approved/manual_dual.json --duration 20
+```
+
+같은 사용자의 다른 터미널에서 상태를 확인한다. 정상 종료는 스틱 중앙 복귀, SA KILL, 종료 요청, 독립 추진 전원 차단 순서다. 회차별 로그와 종료코드는 `~/.local/state/kaboat-manual/`에 기록된다.
+
+```bash
+ros2 run kaboat_manual manual status
+ros2 run kaboat_manual manual stop
+ros2 run kaboat_manual manual diagnose
+```
+
+## 빌드와 기록
+
+소스에서 다시 설치하려면 워크스페이스 루트에서 실행한다.
+
+```bash
+cd ~/kaboat_ws
+source /opt/ros/humble/setup.bash
+colcon build --base-paths src --packages-up-to kaboat_manual
+source install/setup.bash
+```
+
+Git에는 소스·시험 도구·판정 기록을 보관한다. 원본 bag·GPIO 로그·로컬 백업은 Pi 또는 별도 아카이브에서 원래 경로로 복원해야 기존 분석기의 입력과 기록 문서의 원본 링크를 사용할 수 있다. [소프트웨어 시험 결과](docs/records/manual-dual-software.txt) · [벤치 검증 기록](docs/records/bench-stop.md) · [개발 이력](docs/records/WORKLOG.md)
+
+PREVIEW 및 향후 AUTO 연동에는 감독기의 후보 명령 토픽 `/boat/auto/cmd_vel`을 사용한다. 최종 `/boat/cmd_vel`은 제어기가 단독 발행한다. [제어기 운용 방법](src/kaboat_control/README.md)

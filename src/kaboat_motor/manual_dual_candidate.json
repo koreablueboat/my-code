@@ -1,0 +1,47 @@
+{
+  "mode": "bidirectional",
+  "note": "UNVERIFIED dual Basic ESC R3 manual candidate. Count limits, polarity and motion thresholds require installation-specific evidence.",
+  "esc_spec_verified": false,
+  "oe_default_disabled_verified": false,
+  "independent_stop_verified": false,
+  "signal_loss_stop_verified": false,
+  "reverse_limit": 0.04,
+  "neutral_dwell_seconds": 0.4,
+  "frequency_hz": 50,
+  "i2c_address": 64,
+  "reference_clock_hz": 28437000,
+  "oe_gpio_bcm": 17,
+  "neutral_init_seconds": 3,
+  "left": {
+    "channel": 0,
+    "sign": 1,
+    "neutral_us": 1500,
+    "forward_us": 1900,
+    "reverse_us": 1100
+  },
+  "right": {
+    "channel": 1,
+    "sign": 1,
+    "neutral_us": 1500,
+    "forward_us": 1900,
+    "reverse_us": 1100
+  },
+  "trial_scope": "manual_dual",
+  "propulsion_disconnect_model": null,
+  "approval_record": null,
+  "dual_mapping_verified": false,
+  "count_mapping": {
+    "left": {
+      "reverse_limit": 298,
+      "reverse_start": 301,
+      "forward_start": 313,
+      "forward_limit": 319
+    },
+    "right": {
+      "reverse_limit": 298,
+      "reverse_start": 301,
+      "forward_start": 313,
+      "forward_limit": 319
+    }
+  }
+}

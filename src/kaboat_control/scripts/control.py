@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """ROS adapter for the field v3.4 Supervisor and a bidirectional motor."""
 import json
+import signal
 import time
 from pathlib import Path
 
 import rclpy
+from rclpy.signals import SignalHandlerOptions
 from geometry_msgs.msg import Twist
 from rcl_interfaces.msg import ParameterDescriptor
 from rclpy.clock import Clock, ClockType
@@ -21,7 +23,7 @@ class Control(Node):
         config = json.loads(Path(__file__).with_name('control_config.json').read_text())
         backend = self.declare_parameter(
             'expected_backend', 'preview',
-            ParameterDescriptor(read_only=True, description='Expected motor_status backend: preview or pca9685'),
+            ParameterDescriptor(read_only=True, description='Expected motor_status backend: preview, pca9685, bench_neutral, bench_variable left_t200_water or manual_dual'),
         ).value
         self.core = Supervisor(config, expected_backend=backend)
         self.cmd = self.create_publisher(Twist, '/boat/cmd_vel', 1)
@@ -156,13 +158,24 @@ class Control(Node):
 
 
 def main():
-    rclpy.init()
+    stopping = False
+
+    def request_stop(signum, frame):
+        nonlocal stopping
+        stopping = True
+
+    # Finish the in-flight message conversion before tearing down the executor.
+    signal.signal(signal.SIGINT, request_stop)
+    signal.signal(signal.SIGTERM, request_stop)
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
     node = Control()
+    executor = rclpy.get_global_executor()
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+        while not stopping and rclpy.ok():
+            executor.spin_once(timeout_sec=.05)
     finally:
+        executor.remove_node(node)
         if rclpy.ok():
             node.core.stop('shutdown')
             node.publish(node.core.result())

@@ -8,9 +8,12 @@ from unittest.mock import patch
 from esc_config import controller_for_profile, validate,pulse_us,duty_from_us
 from motor_core import mix,Controller
 from pca_backend import PCAOutput
+from reverse_motor_core import mix as bidirectional_mix
 ROOT=Path(__file__).parent
 F=json.loads((ROOT/'preview_forward_only.json').read_text())
 B=json.loads((ROOT/'preview_bidirectional.json').read_text())
+
+CANDIDATE = json.loads((ROOT / 'replacement_board_candidate.json').read_text())
 
 class ConfigTests(unittest.TestCase):
     def test_forward_only_stop(self):self.assertEqual(pulse_us(0,F,'left'),1000)
@@ -26,7 +29,7 @@ class ConfigTests(unittest.TestCase):
             for w in (-10,-.06,0,.06,10):
                 l,r=mix(v,w,'forward_only');self.assertGreaterEqual(min(l,r),0);self.assertLessEqual(max(l,r),.1500001)
     def test_examples_refuse_hardware(self):
-        for p in (F,B):
+        for p in (F,B,CANDIDATE):
             validate(p)
             with self.assertRaises(ValueError):PCAOutput(p)
     def test_duplicate_channel(self):
@@ -37,7 +40,7 @@ class ConfigTests(unittest.TestCase):
         with self.assertRaises(ValueError):validate(p)
     def test_bidirectional_sign(self):
         p=copy.deepcopy(B);p['left']['sign']=-1;self.assertEqual(pulse_us(.1,p,'left'),1460)
-    def test_timing(self):self.assertEqual(duty_from_us(1500,50),4915)
+    def test_timing(self):self.assertEqual(duty_from_us(1500,50),307 << 4)
     def test_invalid_timing(self):
         with self.assertRaises(ValueError):duty_from_us(float('nan'),50)
 
@@ -62,7 +65,19 @@ class DriverTests(unittest.TestCase):
                 if test.fail and self.i==1:raise OSError('mock I2C failure')
                 self._duty=v;events.append(('pwm',self.i,v))
         class PCA:
-            def __init__(self,*a,**kw):events.append(('pca_init',));self.channels=[Channel(i) for i in range(16)];self.frequency=50
+            def __init__(self, bus, *, address, reference_clock_speed):
+                events.append(('pca_init',))
+                self.clock = reference_clock_speed
+                self.channels = [Channel(i) for i in range(16)]
+
+            @property
+            def frequency(self):
+                return self.clock / (4096 * (self.prescale + 1))
+
+            @frequency.setter
+            def frequency(self, hz):
+                self.prescale = int(self.clock / (4096 * hz) + 0.5) - 1
+
             def deinit(self):events.append(('pca_close',))
         board=types.ModuleType('board');board.I2C=lambda:types.SimpleNamespace(deinit=lambda:events.append(('i2c_close',)))
         ad=types.ModuleType('adafruit_pca9685');ad.PCA9685=PCA
@@ -76,7 +91,7 @@ class DriverTests(unittest.TestCase):
         d.enable_neutral()
         enabled = self.events.index(('oe', 0))
         for channel in (0, 1):
-            self.assertIn(('pwm', channel, duty_from_us(1000, 50)), self.events[:enabled])
+            self.assertIn(('pwm', channel, duty_from_us(1000, d.actual_frequency)), self.events[:enabled])
         d.close()
 
     def test_bidirectional_profile_and_mock_pwm(self):
@@ -100,7 +115,34 @@ class DriverTests(unittest.TestCase):
             bridge.write(*hardware.output)
             for index, side in enumerate(('left', 'right')):
                 pulse = pulse_us(preview.output[index], profile, side)
-                self.assertEqual(bridge.pca.channels[index].duty_cycle, duty_from_us(pulse, 50))
+                self.assertEqual(bridge.pca.channels[index].duty_cycle, duty_from_us(pulse, bridge.actual_frequency))
+
+    def test_calibrated_channel_counts(self):
+        profile, modules = self.make(CANDIDATE)
+        with patch.dict(sys.modules, modules):
+            bridge = PCAOutput(profile)
+        self.addCleanup(bridge.close)
+        self.assertEqual(bridge.pca.prescale, 0x8A)
+        self.assertAlmostEqual(bridge.actual_frequency, 49.9469565)
+        for surge, yaw, expected in (
+            (0, 0, (307, 307)), (.03, 0, (315, 315)), (-.009, 0, (304, 304)),
+            (0, .06, (304, 310)), (0, -.06, (310, 304)),
+            (.03, .06, (307, 319)), (-.009, .06, (304, 313)),
+        ):
+            with self.subTest(surge=surge, yaw=yaw):
+                outputs = bidirectional_mix(surge, yaw)
+                bridge.write(*outputs)
+                counts = tuple(ch.duty_cycle >> 4 for ch in bridge.pca.channels[:2])
+                self.assertEqual(counts, expected)
+        self.assertTrue(all(ch.duty_cycle == 0 for ch in bridge.pca.channels[2:]))
+
+    def test_nearest_count_across_candidate_pulse_range(self):
+        tick_us = 139 / 28.437
+        frequency = 28_437_000 / (4096 * 139)
+        for us in range(1100, 1901):
+            duty = duty_from_us(us, frequency)
+            self.assertEqual(duty % 16, 0)
+            self.assertLessEqual(abs((duty >> 4) * tick_us - us), tick_us / 2)
 
     def test_bidirectional_hardware_requires_explicit_limits(self):
         profile, _ = self.make(B)

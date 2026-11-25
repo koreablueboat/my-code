@@ -1,0 +1,21 @@
+양쪽 T200 수동 제어 소프트웨어 검증 (실물 미승인)
+2026-11-25T23:26:44+09:00
+신규 시험: /usr/bin/python3 -m pytest -q src/kaboat_manual/test_manual_launcher.py src/kaboat_motor/test_manual_dual.py
+...........                                                              [100%]
+11 passed in 6.67s
+Starting >>> boat_rc
+Starting >>> kaboat_motor
+Finished <<< boat_rc [1.15s]
+Finished <<< kaboat_motor [29.9s]
+Starting >>> kaboat_control
+Finished <<< kaboat_control [0.86s]
+Starting >>> kaboat_manual
+Finished <<< kaboat_manual [11.6s]
+
+Summary: 4 packages finished [46.5s]
+Starting >>> kaboat_manual
+Finished <<< kaboat_manual [8.10s]
+
+Summary: 1 package finished [12.9s]
+설치 명령 ros2 run kaboat_manual manual check 및 start: 후보 프로파일 모두 exit 1 (hardware refused: esc_spec_verified is not true).
+메모리 레지스터/합성 RC 9건, 로컬 대역 프로세스 종료·오류·기록 마감 2건. 실제 RC/PCA/ESC 및 실물 차단은 미측정. 기존 실물 시험 판정 유지.

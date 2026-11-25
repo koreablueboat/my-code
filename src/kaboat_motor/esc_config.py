@@ -68,6 +68,9 @@ def pulse_us(value,p,side):
 
 def duty_from_us(microseconds,frequency):
     if not number(microseconds,500,2500) or not number(frequency,25,400):raise ValueError('invalid timing')
-    result=round(microseconds*frequency*65536/1000000)
-    if not 0<result<65535:raise ValueError('pulse exceeds period')
-    return result
+    # Adafruit discards the low four bits of its 16-bit duty value.
+    # Round in hardware ticks first so the register gets the nearest count.
+    counts = round(microseconds * frequency * 4096 / 1_000_000)
+    if not 0 < counts < 4096:
+        raise ValueError('pulse exceeds representable PWM range')
+    return counts << 4

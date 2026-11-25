@@ -1,3 +1,16 @@
 {
-    "gitdoc.enabled": true
+    "gitdoc.enabled": false,
+    "git.enableSmartCommit": false,
+    "files.exclude": {
+        "build": true,
+        "install": true,
+        "log": true,
+        "backups": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "bench_variable_trial": true,
+        "left_water_trial": true,
+        "pwm_ab": true,
+        "rc_preview_trial": true
+    }
 }

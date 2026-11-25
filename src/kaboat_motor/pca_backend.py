@@ -9,6 +9,8 @@ from esc_config import validate,pulse_us,duty_from_us
 class PCAOutput:
     def __init__(self,profile):
         validate(profile,hardware=True)  # before importing/accessing hardware
+        if profile.get('trial_scope') in ('left_t200_water','manual_dual'):
+            raise ValueError('single-channel or scoped approval cannot be used for generic dual output')
         import board
         from adafruit_pca9685 import PCA9685
         from gpiozero import DigitalOutputDevice
@@ -33,10 +35,12 @@ class PCAOutput:
         self.oe.on()
         self.ready_at = float('inf')
 
-    def enable_neutral(self):
+    def enable_neutral(self, permit=None):
         self.write(0., 0.)
-        self.ready_at = time.monotonic() + self.profile['neutral_init_seconds']
+        if permit is not None and not permit():
+            raise RuntimeError("PCA enable expired during neutral write")
         self.oe.off()
+        self.ready_at = time.monotonic() + self.profile['neutral_init_seconds']
 
     def poll(self,now):
         return not self.failed and now>=self.ready_at

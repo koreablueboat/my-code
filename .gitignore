@@ -5,3 +5,41 @@
 __pycache__/
 *.pyc
 *.bak
+
+# Local test sessions and raw captures
+results/
+bag/
+rosbag2_*/
+*.db3
+*.db3-*
+*.mcap
+*.log
+*.log.times
+*.log.err
+
+# Local caches and backup archives
+.pytest_cache/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Local credentials, private keys and installation approvals
+.aws/
+.ssh/
+.codex/
+.agents/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+.git-credentials
+.netrc
+credentials.json
+secrets.json
+approved/
