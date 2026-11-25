@@ -21,10 +21,13 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS neutral_probe.py DESTINATION lib/${PROJECT_NAME} RENAME neutral_probe)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   ament_add_pytest_test(motor_core test_motor_core.py)
   ament_add_pytest_test(pca_config test_pca_config.py)
+  ament_add_pytest_test(neutral_probe_test test_neutral_probe.py)
 endif()
 
 ament_package()
